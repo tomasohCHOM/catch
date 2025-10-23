@@ -6,7 +6,7 @@ const ITEM = 2;
 const UP = -1;
 const DOWN = 1;
 const BRAILLE_SPACE = "\u2800";
-const FRAME_TIME = 500;
+const FRAME_TIME = 100;
 
 const Game = {
   grid: [],
@@ -15,12 +15,10 @@ const Game = {
   running: true,
   lastFrame: 0,
   currentScore: 0,
-  whitespaceReplacementChar: BRAILLE_SPACE,
 };
 
 function main() {
   resetUrl();
-  detectBrowserUrlWhitespaceEscaping();
   setEventHandlers();
   resetGame();
 
@@ -52,7 +50,7 @@ function resetGame() {
 function updateGame() {
   updateItems();
   maybeDropNewItem();
-  checkCollisions();
+  checkCollision();
 }
 
 function setEventHandlers() {
@@ -76,6 +74,7 @@ function setEventHandlers() {
     Game.playerPos = newY;
     Grid.set(0, Game.playerPos, PLAYER);
 
+    checkCollision();
     drawGame();
   });
 }
@@ -84,7 +83,7 @@ function maybeDropNewItem() {
   const y = Math.floor(Math.random() * GRID_HEIGHT);
   const last = Game.droppingItems.at(-1);
   const shouldDrop =
-    Math.random() >= 0.5 && (!last || last[0] < GRID_WIDTH - 7);
+    Math.random() >= 0.5 && (!last || last[0] < GRID_WIDTH - 4);
   if (shouldDrop) {
     Game.droppingItems.push([GRID_WIDTH - 1, y]);
   }
@@ -92,23 +91,29 @@ function maybeDropNewItem() {
 
 function updateItems() {
   for (const [x, y] of Game.droppingItems) {
-    Grid.set(x, y, EMPTY);
+    if (Grid.get(x, y) !== PLAYER) {
+      Grid.set(x, y, EMPTY);
+    }
   }
   for (const item of Game.droppingItems) {
     item[0] -= 1;
   }
-  Game.droppingItems = Game.droppingItems.filter(([x]) => x >= 0);
+  if (Game.droppingItems.some((item) => item[0] < 0)) {
+    resetGame();
+    return;
+  }
   for (const [x, y] of Game.droppingItems) {
     Grid.set(x, y, ITEM);
   }
 }
 
-function checkCollisions() {
-  for (const [x, y] of Game.droppingItems) {
-    if (x === 0) {
-      if (Game.playerPos !== y) resetGame();
-      Game.currentScore += 1;
-    }
+function checkCollision() {
+  if (Game.droppingItems.length === 0) return;
+  const [x, y] = Game.droppingItems[0];
+  if (x === 0 && Game.playerPos === y) {
+    Game.currentScore += 1;
+    Grid.set(x, y, PLAYER);
+    Game.droppingItems.shift();
   }
 }
 
@@ -151,20 +156,12 @@ const Grid = {
         (this.bitAt(x, 3) << 6) |
         (this.bitAt(x + 1, 3) << 7);
 
-      n = 0xff ^ n; // invert
+      n = 0xff ^ n;
       out += String.fromCharCode(0x2800 + n);
     }
     return out;
   },
 };
-
-function detectBrowserUrlWhitespaceEscaping() {
-  history.replaceState(null, null, "#" + BRAILLE_SPACE + BRAILLE_SPACE);
-  if (location.hash.indexOf(BRAILLE_SPACE) == -1) {
-    console.warn("Browser is escaping whitespace characters on URL");
-    Game.whitespaceReplacementChar = "૟";
-  }
-}
 
 function resetUrl() {
   history.replaceState(null, "", location.pathname.replace(/\b\/$/, ""));
