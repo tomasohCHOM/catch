@@ -6,7 +6,7 @@ const ITEM = 2;
 const UP = -1;
 const DOWN = 1;
 const BRAILLE_SPACE = "\u2800";
-const FRAME_TIME = 100;
+const MIN_FRAME_TIME = 75;
 
 const Game = {
   grid: [],
@@ -16,116 +16,6 @@ const Game = {
   lastFrame: 0,
   currentScore: 0,
 };
-
-function main() {
-  resetUrl();
-  setEventHandlers();
-  resetGame();
-
-  Game.lastFrame = Date.now();
-  requestAnimationFrame(gameLoop);
-}
-
-function gameLoop() {
-  if (!Game.running) return;
-
-  const now = Date.now();
-  const delta = now - Game.lastFrame;
-  if (delta >= FRAME_TIME) {
-    updateGame();
-    drawGame();
-    Game.lastFrame = now;
-  }
-  requestAnimationFrame(gameLoop);
-}
-
-function resetGame() {
-  Grid.clear();
-  Game.playerPos = 1;
-  Game.droppingItems = [];
-  Game.currentScore = 0;
-  Grid.set(0, Game.playerPos, PLAYER);
-}
-
-function updateGame() {
-  updateItems();
-  maybeDropNewItem();
-  checkCollision();
-}
-
-function setEventHandlers() {
-  const keyMap = {
-    ArrowUp: UP,
-    ArrowDown: DOWN,
-    w: UP,
-    s: DOWN,
-    k: UP,
-    j: DOWN,
-  };
-
-  document.addEventListener("keydown", (e) => {
-    const dir = keyMap[e.key];
-    if (!dir) return;
-
-    const newY = Game.playerPos + dir;
-    if (newY < 0 || newY >= GRID_HEIGHT) return;
-
-    Grid.set(0, Game.playerPos, EMPTY);
-    Game.playerPos = newY;
-    Grid.set(0, Game.playerPos, PLAYER);
-
-    checkCollision();
-    drawGame();
-  });
-}
-
-function maybeDropNewItem() {
-  const y = Math.floor(Math.random() * GRID_HEIGHT);
-  const last = Game.droppingItems.at(-1);
-  const shouldDrop =
-    Math.random() >= 0.5 && (!last || last[0] < GRID_WIDTH - 4);
-  if (shouldDrop) {
-    Game.droppingItems.push([GRID_WIDTH - 1, y]);
-  }
-}
-
-function updateItems() {
-  for (const [x, y] of Game.droppingItems) {
-    if (Grid.get(x, y) !== PLAYER) {
-      Grid.set(x, y, EMPTY);
-    }
-  }
-  for (const item of Game.droppingItems) {
-    item[0] -= 1;
-  }
-  if (Game.droppingItems.some((item) => item[0] < 0)) {
-    resetGame();
-    return;
-  }
-  for (const [x, y] of Game.droppingItems) {
-    Grid.set(x, y, ITEM);
-  }
-}
-
-function checkCollision() {
-  if (Game.droppingItems.length === 0) return;
-  const [x, y] = Game.droppingItems[0];
-  if (x === 0 && Game.playerPos === y) {
-    Game.currentScore += 1;
-    Grid.set(x, y, PLAYER);
-    Game.droppingItems.shift();
-  }
-}
-
-function drawGame() {
-  const hash =
-    "#|" + Grid.toBrailleString() + "|[score:" + Game.currentScore + "]";
-  try {
-    history.replaceState(null, "", hash);
-  } catch {
-    location.hash = hash;
-  }
-}
 
 const Grid = {
   index(x, y) {
@@ -163,8 +53,122 @@ const Grid = {
   },
 };
 
+function main() {
+  resetUrl();
+  setEventHandlers();
+  resetGame();
+
+  Game.lastFrame = Date.now();
+  requestAnimationFrame(gameLoop);
+}
+
+function gameLoop() {
+  if (!Game.running) return;
+
+  const now = Date.now();
+  const delta = now - Game.lastFrame;
+  if (delta >= tickTime()) {
+    updateGame();
+    drawGame();
+    Game.lastFrame = now;
+  }
+  requestAnimationFrame(gameLoop);
+}
+
+function resetGame() {
+  Grid.clear();
+  Game.playerPos = 1;
+  Game.droppingItems = [];
+  Game.currentScore = 0;
+  Grid.set(0, Game.playerPos, PLAYER);
+}
+
 function resetUrl() {
   history.replaceState(null, "", location.pathname.replace(/\b\/$/, ""));
+}
+
+function setEventHandlers() {
+  const keyMap = {
+    ArrowUp: UP,
+    ArrowDown: DOWN,
+    w: UP,
+    s: DOWN,
+    k: UP,
+    j: DOWN,
+  };
+
+  document.addEventListener("keydown", (e) => {
+    const dir = keyMap[e.key];
+    if (!dir) return;
+
+    const newY = Game.playerPos + dir;
+    if (newY < 0 || newY >= GRID_HEIGHT) return;
+
+    Grid.set(0, Game.playerPos, EMPTY);
+    Game.playerPos = newY;
+    Grid.set(0, Game.playerPos, PLAYER);
+
+    checkCollision();
+    drawGame();
+  });
+}
+
+function updateGame() {
+  updateItems();
+  maybeDropNewItem();
+  checkCollision();
+}
+
+function updateItems() {
+  for (const [x, y] of Game.droppingItems) {
+    if (Grid.get(x, y) !== PLAYER) {
+      Grid.set(x, y, EMPTY);
+    }
+  }
+  for (const item of Game.droppingItems) {
+    item[0] -= 1;
+  }
+  if (Game.droppingItems.some((item) => item[0] < 0)) {
+    resetGame();
+    return;
+  }
+  for (const [x, y] of Game.droppingItems) {
+    Grid.set(x, y, ITEM);
+  }
+}
+
+function maybeDropNewItem() {
+  const y = Math.floor(Math.random() * GRID_HEIGHT);
+  const last = Game.droppingItems.at(-1);
+  const shouldDrop =
+    Math.random() >= 0.5 && (!last || last[0] < GRID_WIDTH - 4);
+  if (shouldDrop) {
+    Game.droppingItems.push([GRID_WIDTH - 1, y]);
+  }
+}
+
+function checkCollision() {
+  if (Game.droppingItems.length === 0) return;
+  const [x, y] = Game.droppingItems[0];
+  if (x === 0 && Game.playerPos === y) {
+    Game.currentScore += 1;
+    Grid.set(x, y, PLAYER);
+    Game.droppingItems.shift();
+  }
+}
+
+function tickTime() {
+  return MIN_FRAME_TIME + 250 / (1 + Game.currentScore / 10);
+}
+
+function drawGame() {
+  const hash =
+    "#|" + Grid.toBrailleString() + "|[score:" + Game.currentScore + "]";
+  try {
+    history.replaceState(null, "", hash);
+  } catch {
+    location.hash = hash;
+  }
 }
 
 main();
