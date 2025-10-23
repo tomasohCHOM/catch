@@ -47,7 +47,7 @@ const Grid = {
         (this.bitAt(x + 1, 3) << 7);
 
       n = 0xff ^ n;
-      out += String.fromCharCode(0x2800 + n);
+      out += String.fromCharCode(0x2800 | n);
     }
     return out;
   },
@@ -76,6 +76,8 @@ function gameLoop() {
 }
 
 function resetGame() {
+  console.log(getHash());
+  displayBestSummary();
   Grid.clear();
   Game.playerPos = 1;
   Game.droppingItems = [];
@@ -161,14 +163,23 @@ function tickTime() {
   return MIN_FRAME_TIME + 250 / (1 + Game.currentScore / 10);
 }
 
+function getHash() {
+  return "#|" + Grid.toBrailleString() + "|[score:" + Game.currentScore + "]";
+}
+
 function drawGame() {
-  const hash =
-    "#|" + Grid.toBrailleString() + "|[score:" + Game.currentScore + "]";
+  const hash = getHash();
   try {
     history.replaceState(null, "", hash);
   } catch {
     location.hash = hash;
   }
 }
+
+function displayBestSummary() {
+  console.log(getHash());
+}
+
+function updateBestSummary() {}
 
 main();
