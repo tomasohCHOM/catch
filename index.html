@@ -10,13 +10,20 @@
     <main>
       <h1>URL Catching Game!</h1>
       <p>
-        Catch the items falling from the right side by moving up and down, all
-        in the URL bar! Use arrow keys, w/s, or k/j to move the player up and
-        down. Speed increases as your score increases! Inspired by
-        <a target="_blank" href="https://demian.ferrei.ro/snake">URL Snake</a>
+        Catch the falling items on the right side by moving your player up and
+        down — all within the URL bar! Use <code>Arrow Keys</code>,
+        <code>W/S</code>, or <code>K/J</code> to move. The game speeds up as
+        your score increases. Inspired by
+        <a target="_blank" href="https://demian.ferrei.ro/snake">URL Snake</a>.
       </p>
-      <p>High Score: <b>0</b></p>
-      <div class="best-summary"></div>
+      <p>
+        Best Score: <span id="best-score"><b>0</b></span>
+      </p>
+      <div id="best-summary" class="best-summary">
+        <code></code>
+        <button id="share-btn" class="share-btn" hidden>Share</button>
+      </div>
+      <a target="_blank" href="https://github.com/tomasohCHOM/catch">Code</a>
     </main>
     <script src="catch.js"></script>
   </body>

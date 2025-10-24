@@ -54,6 +54,7 @@ const Grid = {
 };
 
 function main() {
+  displayBestSummary();
   resetUrl();
   setEventHandlers();
   resetGame();
@@ -76,8 +77,7 @@ function gameLoop() {
 }
 
 function resetGame() {
-  console.log(getHash());
-  displayBestSummary();
+  updateBestSummary();
   Grid.clear();
   Game.playerPos = 1;
   Game.droppingItems = [];
@@ -122,6 +122,10 @@ function updateGame() {
 }
 
 function updateItems() {
+  if (Game.droppingItems.some((item) => item[0] === 0)) {
+    resetGame();
+    return;
+  }
   for (const [x, y] of Game.droppingItems) {
     if (Grid.get(x, y) !== PLAYER) {
       Grid.set(x, y, EMPTY);
@@ -129,10 +133,6 @@ function updateItems() {
   }
   for (const item of Game.droppingItems) {
     item[0] -= 1;
-  }
-  if (Game.droppingItems.some((item) => item[0] < 0)) {
-    resetGame();
-    return;
   }
   for (const [x, y] of Game.droppingItems) {
     Grid.set(x, y, ITEM);
@@ -177,9 +177,38 @@ function drawGame() {
 }
 
 function displayBestSummary() {
-  console.log(getHash());
+  const bestSummary = localStorage.getItem("bestSummary") || "";
+  const bestScore = parseInt(localStorage.getItem("bestScore") || "0", 10);
+  const bestScoreElem = document.querySelector("#best-score > b");
+  const bestSummaryCode = document.querySelector("#best-summary > code");
+  const shareBtn = document.querySelector("#share-btn");
+
+  bestScoreElem.textContent = bestScore;
+  bestSummaryCode.textContent = bestSummary;
+  shareBtn.hidden = bestScore <= 0;
+  if (bestScore > 0) {
+    shareBtn.onclick = async () => {
+      try {
+        const copyText = `${bestSummary} — URL Catching Game! https://tomasohchom.github.io/catch`;
+        await navigator.clipboard.writeText(copyText);
+        alert("Copied your best game summary to the clipboard!");
+      } catch (err) {
+        console.error("Failed to copy text:", err);
+      }
+    };
+  }
 }
 
-function updateBestSummary() {}
+function updateBestSummary() {
+  const storedBestScore = parseInt(
+    localStorage.getItem("bestScore") || "0",
+    10
+  );
+  if (Game.currentScore > storedBestScore) {
+    localStorage.setItem("bestSummary", getHash());
+    localStorage.setItem("bestScore", Game.currentScore);
+    displayBestSummary();
+  }
+}
 
 main();

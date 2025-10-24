@@ -35,9 +35,24 @@ a {
   text-underline-offset: 2px;
 }
 
+code {
+  font-family: monospace;
+}
+
 .best-summary {
   background-color: var(--color-background-secondary);
   margin: 0 0.5rem;
-  padding: 1rem;
+  padding: 0.5rem 1rem;
   border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.share-btn {
+  outline: 0;
+  border: 0;
+  padding: 0.5rem 1rem;
+  background-color: var(--color-contrast);
+  border-radius: 0.25rem;
 }
